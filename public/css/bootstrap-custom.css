@@ -1,0 +1,16 @@
+.form-horizontal .control-group {
+    margin-bottom: 8px;
+}
+
+input[type="address"] {
+    size:10;
+    border-radius: 4px 4px 4px 4px;
+    color: #555555;
+    display: inline-block;
+    font-size: 15px;
+    height: 15px;
+    line-height: 25px;
+    margin-top: 1px;
+    padding: 4px 6px;
+    vertical-align: middle;
+}
