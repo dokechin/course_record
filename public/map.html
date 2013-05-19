@@ -20,7 +20,9 @@
     var geocoder, map, path = [], service = new google.maps.DirectionsService(), shiftPressed = false, poly;
     var start_marker;
 
-    var MyPolyline = function(model) { this.model = model; }
+    var MyPolyline = function(model) { 
+        google.maps.Polyline.call(this,model);
+   }
 
     MyPolyline.prototype = new google.maps.Polyline();
     MyPolyline.prototype.oldpath = undefined;
