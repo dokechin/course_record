@@ -19,22 +19,31 @@
   <script type="text/javascript">
     var geocoder, map, path = [], service = new google.maps.DirectionsService(), shiftPressed = false, poly;
     var start_marker;
- 
-    var start_icon = "./img/start.png";
+
+    var MyPolyline = function(model) { this.model = model; }
+
+    MyPolyline.prototype = new google.maps.Polyline();
+    MyPolyline.prototype.oldpath = undefined;
+    MyPolyline.prototype.dist = undefined;
+
+    MyPolyline.prototype.inKm = function() {
+        if (this.getPath() != this.oldpath  ){
+            var path = this.getPath(), len = path.getLength(), dist = 0;
+            for(var i=0; i<len-1; i++){ 
+              dist += path.getAt(i).kmTo(path.getAt(i+1)); 
+            } 
+            this.dist = Math.round(dist*1000) /1000 ; 
+            this.oldpath = this.getPath();
+        }
+        return this.dist;
+    }
+    var start_icon = "./img/start-race.png";
     google.maps.LatLng.prototype.kmTo = function(a){ 
         var e = Math, ra = e.PI/180; 
         var b = this.lat() * ra, c = a.lat() * ra, d = b - c; 
         var g = this.lng() * ra - a.lng() * ra; 
         var f = 2 * e.asin(e.sqrt(e.pow(e.sin(d/2), 2) + e.cos(b) * e.cos (c) * e.pow(e.sin(g/2), 2))); 
         return f * 6378.137; 
-    } 
-
-    google.maps.Polyline.prototype.inKm = function(n){ 
-        var a = this.getPath(n), len = a.getLength(), dist = 0; 
-        for(var i=0; i<len-1; i++){ 
-          dist += a.getAt(i).kmTo(a.getAt(i+1)); 
-        } 
-        return Math.round(dist*1000) /1000 ; 
     } 
 
     function deletePolyline() {
@@ -129,13 +138,13 @@
         if (shiftPressed || path.length == 0) {
             path.push(evt.latLng);
             var icoimg = new google.maps.MarkerImage(start_icon,
-              new google.maps.Size(48, 48),
+              new google.maps.Size(32, 37),
               new google.maps.Point(0, 0),
-              new google.maps.Point(10, 10)
+              new google.maps.Point(16, 37)
             );
             start_marker = new google.maps.Marker({position: evt.latLng, map: map, title: "start", icon: icoimg});
             if (path.length == 1) {
-                poly = new google.maps.Polyline({ map: map , strokeColor: "#CC33FF"});
+                poly = new MyPolyline({ map: map , strokeColor: "#CC33FF"});
             }
             poly.setPath(path);
         } else {
