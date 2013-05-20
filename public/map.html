@@ -26,18 +26,24 @@
 
     MyPolyline.prototype = new google.maps.Polyline();
     MyPolyline.prototype.oldpath = undefined;
-    MyPolyline.prototype.dist = undefined;
+    MyPolyline.prototype.dist = [];
+    MyPolyline.prototype.total_dist = undefined;
+
+    MyPolyline.prototype._calc_dist = function() {
+        var path = this.getPath(), len = path.getLength(), total_dist = 0;
+        for(var i=0; i<len-1; i++){ 
+          total_dist += path.getAt(i).kmTo(path.getAt(i+1));
+          this.dist.push(total_dist);
+        }
+        this.total_dist = Math.round(total_dist*1000) /1000 ; 
+        this.oldpath = this.getPath();
+    }
 
     MyPolyline.prototype.inKm = function() {
         if (this.getPath() != this.oldpath  ){
-            var path = this.getPath(), len = path.getLength(), dist = 0;
-            for(var i=0; i<len-1; i++){ 
-              dist += path.getAt(i).kmTo(path.getAt(i+1)); 
-            } 
-            this.dist = Math.round(dist*1000) /1000 ; 
-            this.oldpath = this.getPath();
+            this._calc_dist();
         }
-        return this.dist;
+        return this.total_dist;
     }
     var start_icon = "./img/start-race.png";
     google.maps.LatLng.prototype.kmTo = function(a){ 
