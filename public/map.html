@@ -11,48 +11,30 @@
     #route_canvas {position: absolute; top: 120px; right: 0; bottom: 0; width: 160px; height: auto; overflow: auto; padding: 5px 5px; background-color: #eaeaea; line-height: 1.8;}
 
   </style>
-  <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=false"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
   <link href="css/bootstrap-custom.css" rel="stylesheet" />
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script type="text/javascript" src="js/mypolyline.js"></script>
   <script type="text/javascript">
+
     var geocoder, map, path = [], service = new google.maps.DirectionsService(), shiftPressed = false, poly;
     var start_marker;
-
-    var MyPolyline = function(model) { 
-        google.maps.Polyline.call(this,model);
-   }
-
-    MyPolyline.prototype = new google.maps.Polyline();
-    MyPolyline.prototype.oldpath = undefined;
-    MyPolyline.prototype.dist = [];
-    MyPolyline.prototype.total_dist = undefined;
-
-    MyPolyline.prototype._calc_dist = function() {
-        var path = this.getPath(), len = path.getLength(), total_dist = 0;
-        for(var i=0; i<len-1; i++){ 
-          total_dist += path.getAt(i).kmTo(path.getAt(i+1));
-          this.dist.push(total_dist);
-        }
-        this.total_dist = Math.round(total_dist*1000) /1000 ; 
-        this.oldpath = this.getPath();
-    }
-
-    MyPolyline.prototype.inKm = function() {
-        if (this.getPath() != this.oldpath  ){
-            this._calc_dist();
-        }
-        return this.total_dist;
-    }
     var start_icon = "./img/start-race.png";
-    google.maps.LatLng.prototype.kmTo = function(a){ 
-        var e = Math, ra = e.PI/180; 
-        var b = this.lat() * ra, c = a.lat() * ra, d = b - c; 
-        var g = this.lng() * ra - a.lng() * ra; 
-        var f = 2 * e.asin(e.sqrt(e.pow(e.sin(d/2), 2) + e.cos(b) * e.cos (c) * e.pow(e.sin(g/2), 2))); 
-        return f * 6378.137; 
-    } 
+    var check_icon = "./img/jogging.png";
+
+    var startimg = new google.maps.MarkerImage(start_icon,
+              new google.maps.Size(32, 37),
+              new google.maps.Point(0, 0),
+              new google.maps.Point(16, 37)
+    );
+    
+    var checkimg = new google.maps.MarkerImage(check_icon,
+              new google.maps.Size(32, 37),
+              new google.maps.Point(0, 0),
+              new google.maps.Point(16, 37)
+    );
 
     function deletePolyline() {
       if (path.length > 0 ){
@@ -150,7 +132,7 @@
               new google.maps.Point(0, 0),
               new google.maps.Point(16, 37)
             );
-            start_marker = new google.maps.Marker({position: evt.latLng, map: map, title: "start", icon: icoimg});
+            start_marker = new google.maps.Marker({position: evt.latLng, map: map, title: "start", icon: startimg});
             if (path.length == 1) {
                 poly = new MyPolyline({ map: map , strokeColor: "#CC33FF"});
             }
