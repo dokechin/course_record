@@ -8,16 +8,26 @@
     MyPolyline.prototype.check = [];
     MyPolyline.prototype.total_dist = 0;
     MyPolyline.prototype.old_dist_index = 0;
-    MyPolyline.prototype.checking_dist = 1;
+    MyPolyline.checking_interval = 0.1;
+    MyPolyline.prototype.checking_dist = MyPolyline.checking_interval;
 
     MyPolyline.prototype.setPath = function(path){
+
+       google.maps.Polyline.prototype.setPath.call(this,path);
     
         if (path.length ==0){
+
+            var len = this.check.length;
+            for(var i=0; i<len ; i++) {
+                this.check[i].setMap(null);
+            }
+
             this.dist = [];
             this.check = [];
             this.total_dist = 0;
             this.old_dist_index = 0;
-            this.checking_dist = 1;
+            this.checking_dist = MyPolyline.checking_interval;
+
             return;
         }
 
@@ -30,7 +40,6 @@
             this.dist.push(total);
         }
 
-       google.maps.Polyline.prototype.setPath.call(this,path);
        
        
        this.renderCheck();
@@ -45,23 +54,23 @@
                 if (this.checing_dist != Math.floor(this.dist[i])){ 
                     check_marker = this.check.pop;
                     check_marker.setMap(null);
-                    this.checking_dist--;
+                    this.checking_dist = this.checking_dist - MyPolyline.checking_interval;
                 }
             }
             return;
         }
 
         var path = this.getPath();
-        for(var i=this.old_dist_index; i<this.dist.length-1; i++){
+        for(var i=this.old_dist_index; i<this.dist.length; i++){
             while(1){
               
                 if ( this.dist[i] >= this.checking_dist){
-                    remain_distance = this.checking_dist - ((i==0)? 0 : this.dist[i-1]);
+                    remain_distance = (this.checking_dist - ((i==0)? 0 : this.dist[i-1]))*1000;
                     heading = google.maps.geometry.spherical.computeHeading(path.getAt(i),path.getAt(i+1));
                     checkpoint = google.maps.geometry.spherical.computeOffset( path.getAt(i),remain_distance,heading);
                     check_marker = new google.maps.Marker({position: checkpoint, map: this.map, title: "" + this.checking_dist + "km", icon: checkimg});
                     this.check.push(check_marker);
-                    this.checking_dist++;
+                    this.checking_dist = this.checking_dist + MyPolyline.checking_interval;
                 }
                 else{
                     break;
