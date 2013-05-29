@@ -14,6 +14,7 @@ USE `crec` ;
 CREATE  TABLE IF NOT EXISTS `crec`.`Route` (
       id int not null auto_increment,
       name text,
+      type int,
       distance decimal(5,3) not null,
       g LINESTRING NOT NULL,
       create_user text,
@@ -23,8 +24,9 @@ CREATE  TABLE IF NOT EXISTS `crec`.`Route` (
       )  ENGINE=MYISAM;
  
 INSERT INTO Route
-			(id, distance,name, g,create_user)
+			(id, type,distance,name, g,create_user)
 			VALUES (
+			1,
 			1,
 			12.324,
 			'test',

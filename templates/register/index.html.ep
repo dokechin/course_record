@@ -1,0 +1,4 @@
+% layout 'bootstrap';
+% title 'Course Record - ランニングコース記録共有サイト';
+<iframe src="map.html" width="768" height="640" scrolling="NO" frameborder="0"></iframe>
+

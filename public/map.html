@@ -6,9 +6,10 @@
     html{height: 100%;}
     body {height: 100%; margin: 0; padding: 0; background-color: #FFF; font-size: small; font-family: Arial, "メイリオ", "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W4", "Osaka", "MS PGothic", sans-serif;}
     #header {position: absolute; top: 0px; left: 0; overflow: hidden; padding: 5px 5px; color: #000;}
-    #map_canvas {position: absolute; top: 120px; left: 0; right: 160px; bottom: 0; width: auto; height: auto; overflow: hidden;}
-    #customBar {position: absolute; left: 70px; top: 120px;overflow: hidden;}
-    #route_canvas {position: absolute; top: 120px; right: 0; bottom: 0; width: 160px; height: auto; overflow: auto; padding: 5px 5px; background-color: #eaeaea; line-height: 1.8;}
+    #map_canvas {position: absolute; top: 40px; left: 0; right:  330px; bottom: 0; width: auto; height: auto; overflow: hidden;}
+    #customBar {position: absolute; left: 70px; top: 40px;overflow: hidden;}
+    #route_canvas {position: absolute; top: 375px; right: 0; bottom :0; width: 320px; height: auto; overflow: auto; padding: 5px 5px; background-color: #eaeaea; line-height: 1.8;}
+    #pano_canvas {position: absolute; top: 40px; right: 0; width: 320px; height: 320px; overflow: auto; padding: 5px 5px; background-color: #eaeaea; line-height: 1.8;}
 
   </style>
   <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=false"></script>
@@ -19,18 +20,11 @@
   <script type="text/javascript" src="js/mypolyline.js"></script>
   <script type="text/javascript">
 
-    var geocoder, map, path = [], service = new google.maps.DirectionsService(), shiftPressed = false, poly;
+    var geocoder, map, path = [], service = new google.maps.DirectionsService(), shiftPressed = false, poly, panorama;
     var start_marker;
     var start_icon = "./img/start-race.png";
-    var check_icon = "./img/jogging.png";
 
     var startimg = new google.maps.MarkerImage(start_icon,
-              new google.maps.Size(32, 37),
-              new google.maps.Point(0, 0),
-              new google.maps.Point(16, 37)
-    );
-    
-    var checkimg = new google.maps.MarkerImage(check_icon,
               new google.maps.Size(32, 37),
               new google.maps.Point(0, 0),
               new google.maps.Point(16, 37)
@@ -68,8 +62,6 @@
     function to_json(path) {
         var json = "{" +
         "\"distance\" : " + poly.inKm() + "," +
-        "\"type\" : 1," + 
-        "\"name\" : \"test\"," + 
         "\"path\" : \"LINESTRING(";
         for (var i = 0; i < path.length; i++) {
             if ( i > 0 ) {
@@ -83,28 +75,34 @@
 
     function register() {
 
+        var course_name = $.trim($("#course_name").val());
+        if (course_name == ""){
+            $("#route_canvas").html("コース名が入力されていません。");
+            return false;
+        }
         if (path.length == 0 ){
-            $("#route_canvas").html("ルートが設定されていません。");
+            $("#route_canvas").html("コースが設定されていません。");
+            return false;
         }
-        else{
 
-          $.ajax({
-          url: '/route',
-          type: 'POST',
-          contentType: 'application/json',
-          data: to_json(path),
-          dataType: 'json'
-          })
-          .done(function( data ) {
-              $("#route_canvas").html("登録が完了しました。");
-          })
-          .fail(function( data ) {
-             $("#route_canvas").html("登録が失敗しました。");
-          })
-          .always(function( data ) {
-              // ...
-          });
-        }
+        $("#json_data").val(encodeURI(to_json(path)));
+
+//          $.ajax({
+//          url: '/route',
+//          type: 'POST',
+//          contentType: 'application/json',
+//          data: to_json(path),
+//          dataType: 'json'
+//          })
+//          .done(function( data ) {
+//              $("#route_canvas").html("登録が完了しました。");
+//          })
+//          .fail(function( data ) {
+//             $("#route_canvas").html("登録が失敗しました。");
+//          })
+//          .always(function( data ) {
+//              // ...
+//          });
     }
 
     google.maps.event.addDomListener(document, "keydown", function() { shiftPressed = true; });
@@ -124,7 +122,14 @@
       document.getElementById("route_canvas").innerHTML = "0km";
       geocoder = new google.maps.Geocoder();
       map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+
+      var panoramaOptions = {    position: new google.maps.LatLng(35.68923, 139.752274),
+      pov: {      heading: 34,      pitch: 10    }  };
+      panorama = new  google.maps.StreetViewPanorama(document.getElementById('pano_canvas'),panoramaOptions);
+      map.setStreetView(panorama);
+
       google.maps.event.addListener(map, "click", function(evt) {
+        panorama.setPosition(evt.latLng);
         if (shiftPressed || path.length == 0) {
             path.push(evt.latLng);
             var icoimg = new google.maps.MarkerImage(start_icon,
@@ -137,13 +142,20 @@
                 poly = new MyPolyline({ map: map , strokeColor: "#CC33FF"});
             }
             poly.setPath(path);
-        } else {
+        } 
+        else {
             service.route({ origin: path[path.length - 1], destination: evt.latLng, travelMode: google.maps.DirectionsTravelMode.WALKING }, function(result, status) {
-              if (status == google.maps.DirectionsStatus.OK) {
-                path = path.concat(result.routes[0].overview_path);
-                poly.setPath(path);
-                document.getElementById("route_canvas").innerHTML = poly.inKm() + "km";
-              }
+                if (status == google.maps.DirectionsStatus.OK) {
+
+                    path = path.concat(result.routes[0].overview_path);
+                    poly.setPath(path);
+                    document.getElementById("route_canvas").innerHTML = poly.inKm() + "km";
+
+                    var run_head = google.maps.geometry.spherical.computeHeading(path[path.length-2],path[path.length-1]);
+                    //var pov = new google.maps.StreetViewPov({heading: run_head, pitch : 10});
+                    panorama.setPov({heading: run_head, pitch : 10});
+
+                }
             });
         }
       });
@@ -152,22 +164,21 @@
 </head>
 <body onload="Init()">
   <div id="header">
-    <form class="form-horizontal" onsubmit="register(); return false">
-    <fieldset>
-    <div class=control-group><label class=control-label for=textinput>コース名</label> 
-    <div class=controls><input id=textinput class=input-xlarge type=text name=textinput placeholder="placeholder"> </div></div>
-    <div class=control-group><label class=control-label for=radios>コース種別</label> 
-    <div class=controls><label class="radio inline" for=radios-0><input id=radios-0 value=片道 checked type=radio name=radios> 片道 </label><label class="radio inline" for=radios-1><input id=radios-1 value=周回 type=radio name=radios> 周回 </label></div></div>
-    <div class=control-group><!--label class=control-label for="">登録</label--> 
-    <div class=controls><button class="btn btn-primary" name="" onclick="register()">登録</button> </div></div>
-    </fieldset>
+    <form method="post" action="/route" class="form-inline" onsubmit="return register();">
+    <label class=control-label for=textinput>コース名:</label>
+    <input id="json_data" type="hidden" name ="data"/>
+    <input id="course_name" class=input-xlarge type=text name="course_name" placeholder="placeholder">
+    <label class="course-type-label control-label" for=radios>コース種別:</label>
+    <label class="radio inline" for=radios-0><input id=radios-0 value=1 checked type=radio name=course_type> 片道 </label><label class="radio inline" for=radios-1><input id=radios-1 value=2 type=radio name=course_type> 周回 </label>
+    <!--label class=control-label for="">登録</label--> 
+    <button class="route-register-button btn btn-primary" name="" type="submit">登録</button>
     </form>
   </div>
   <div id="map_canvas"></div>
   <div id="customBar">
     <form>
     <fieldset>
-      <input type="address" id="addressInput" placeholder="地名を入力" />
+      <input type="address" id="addressInput" length="10" placeholder="地名を入力" />
       <input type="button" onclick="search()" value="移動" />
       <input type="button" onclick="deletePolyline()" value="戻す" />
       <input type="button" onclick="deletePolylines()" value="全クリア" />
@@ -175,6 +186,7 @@
     </form>
   </div>
   <div id="route_canvas"></div>
+  <div id="pano_canvas"></div>
   <script src="http://code.jquery.com/jquery.js"></script>
   <script src="js/bootstrap.min.js"></script>
 </body>

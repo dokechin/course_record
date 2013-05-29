@@ -5,7 +5,7 @@ use DateTime::Format::MySQL;
     table {
         name 'Route';
         pk id;
-        columns qw( id type name distance g create_user create_at );
+        columns qw( id type name distance g create_user type create_at );
 
         inflate 'create_at' => sub {
             DateTime::Format::MySQL->parse_datetime(shift);

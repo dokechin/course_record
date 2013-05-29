@@ -18,8 +18,11 @@ sub startup {
 
   # Normal route to controller
   $r->get('/')->to('root#index');
+  $r->get('/register')->to('register#index');
   $r->post('/route')->to('route#register');
   $r->get('/route')->to('route#index');
+  $r->get('/search')->to('search#index');
+
 }
 
 1;

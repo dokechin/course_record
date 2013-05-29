@@ -1,18 +1,27 @@
 package CourseRecord::Web::Route;
 use Mojo::Base 'Mojolicious::Controller';
 use DateTime;
+use JSON::XS;
+use URI::Escape;
 
 # This action will render a template
 sub register {
   my $self = shift;
 
+  my $json  = Mojo::JSON->new;
+
   my $dt = DateTime->now( time_zone=>'local' );
-  my $name = $self->req->json->{"name"};
-  my $type = $self->req->json->{"type"};
-  my $distance = $self->req->json->{"distance"};
-  my $path = $self->req->json->{"path"};
-  $self->app->log->debug($name);
-  $self->app->log->debug($path);
+  my $name = $self->req->params("course_name");
+  my $type = $self->req->params("course_type");
+  my $data = uri_unescape( $self->req->params("data"));
+
+
+  $self->app->log->debug($data);
+
+  my $hash = decode_json $data;
+  my $path = $hash->{"path"};
+  my $distance = $hash->{"distance"};
+
 
 #  $self->db->do(qq{
 #        Insert into Route 
@@ -30,7 +39,7 @@ sub register {
     create_at => \"Now()"});
 
 
-  $self->render_json($self->req->json);
+  $self->render(json=> $self->req->json);
 }
 
 1;

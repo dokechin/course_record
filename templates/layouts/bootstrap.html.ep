@@ -19,15 +19,15 @@
 
      </script>
   </head>
-  <body style="padding-top:65px;">
+  <body style="padding-top:60px;">
     <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
           <a href="/" class="brand"><img alt="logo" src="/img/logo.png" /></a>
           <ul class="nav">
-            <li class="<% if ($controller eq 'new')  { %><%= 'active' %><% } %>"><a href="/new">新着記録</a></li>
-            <li class="<% if ($controller eq 'root') { %><%= 'active' %><% } %>"><a href="/">コース登録</a></li>
-            <li class="<% if ($controller eq 'new')  { %><%= 'active' %><% } %>"><a href="/new">コース検索</a></li>
+            <li class="<% if ($controller eq 'root')  { %><%= 'active' %><% } %>"><a href="/">Top</a></li>
+            <li class="<% if ($controller eq 'register') { %><%= 'active' %><% } %>"><a href="/register">コース登録</a></li>
+            <li class="<% if ($controller eq 'new')  { %><%= 'active' %><% } %>"><a href="/search">コース検索</a></li>
           </ul>
         </div>
       </div>

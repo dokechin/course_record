@@ -11,4 +11,6 @@ my $lib = join('/', @base, 'lib');
 # Start commands for application
 require CourseRecord::Utility;
 
-CourseRecord::Utility::->makeCheckerIcon();
+for (my $i=0;$i<1000;$i++){
+    CourseRecord::Utility::makeCheckerIcon($i+1);
+}
