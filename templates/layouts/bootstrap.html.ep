@@ -18,6 +18,7 @@
        ga('send', 'pageview');
 
      </script>
+     <%= content 'head' %>
   </head>
   <body style="padding-top:60px;">
     <div class="navbar navbar-inverse navbar-fixed-top">

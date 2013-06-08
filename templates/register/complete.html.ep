@@ -1,0 +1,12 @@
+% layout 'bootstrap';
+% title 'Course Record - ランニングコース記録共有サイト';
+% content_for head => begin
+<style type="text/css">
+    html{height: 100%;}
+    body {height: 100%; margin: 0; padding: 0; background-color: #FFF; font-size: small; font-family: Arial, "メイリオ", "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W4", "Osaka", "MS PGothic", sans-serif;}
+</style>
+% end
+
+<h2>登録が完了しました。</h2>
+
+  

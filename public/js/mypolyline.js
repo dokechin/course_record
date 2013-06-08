@@ -68,7 +68,7 @@
                     remain_distance = (this.checking_dist - ((i==0)? 0 : this.dist[i-1]))*1000;
                     heading = google.maps.geometry.spherical.computeHeading(path.getAt(i),path.getAt(i+1));
                     checkpoint = google.maps.geometry.spherical.computeOffset( path.getAt(i),remain_distance,heading);
-                    var checkimg = new google.maps.MarkerImage("./img/km/" + this.checking_dist + "km_icon.png",
+                    var checkimg = new google.maps.MarkerImage("/img/km/" + this.checking_dist + "km_icon.png",
                               new google.maps.Size(40, 29),
                               new google.maps.Point(0, 0),
                               new google.maps.Point(20, 29)

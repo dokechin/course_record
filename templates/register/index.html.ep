@@ -1,4 +1,234 @@
 % layout 'bootstrap';
 % title 'Course Record - ランニングコース記録共有サイト';
-<iframe src="map.html" width="768" height="640" scrolling="NO" frameborder="0"></iframe>
+% content_for head => begin
+<style type="text/css">
+    html{height: 100%;}
+    body {height: 100%; margin: 0; padding: 0; background-color: #FFF; font-size: small; font-family: Arial, "メイリオ", "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W4", "Osaka", "MS PGothic", sans-serif;}
+    #map_canvas { width: 100%;    height : 600px;}
+    #map_canvas label { width: auto;    display:inline;}
+    #map_canvas img {  max-width: none;}
+    #pano_canvas { width: auto;    height : 360px;}
+    #pano_canvas label { width: auto;    display:inline;}
+    #pano_canvas img { max-width: none;}
+    #route_canvas { width: auto;    height : 240px;}
+    #route_canvas label { width: auto;    display:inline;}
+    #route_canvas img { max-width: none;}
+    #custom_bar {  position:absolute; margin-left: 68px; z-index:2;}
 
+</style>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=false"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+  <link href="css/bootstrap-custom.css" rel="stylesheet" />
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script type="text/javascript" src="js/mypolyline.js"></script>
+  <script type="text/javascript">
+
+    var geocoder, map, path = [], service = new google.maps.DirectionsService(), shiftPressed = false, poly, panorama;
+    var start_marker;
+    var start_icon = "/img/start-race.png";
+
+    var startimg = new google.maps.MarkerImage(start_icon,
+              new google.maps.Size(32, 37),
+              new google.maps.Point(0, 0),
+              new google.maps.Point(16, 37)
+    );
+
+    function deletePolyline() {
+      if (path.length > 0 ){
+          if (path.length == 1 ){
+              start_marker.setMap(null);
+          }
+          path.pop();
+          poly.setPath(path);
+          document.getElementById("route_canvas").innerHTML = poly.inKm() + "km";
+      }
+    }
+
+    function deletePolylines() {
+      if (path.length > 0 ){
+          start_marker.setMap(null);
+          path = [];
+          poly.setPath(path);
+          document.getElementById("route_canvas").innerHTML = poly.inKm() + "km";
+      }
+    }
+
+    function connectToStart() {
+
+      if (path.length > 0 ){
+        path = path.concat(path[0]);
+        poly.setPath(path);
+        document.getElementById("route_canvas").innerHTML = poly.inKm() + "km";
+        var run_head = google.maps.geometry.spherical.computeHeading(path[path.length-2],path[path.length-1]);
+        panorama.setPov({heading: run_head, pitch : 10});
+        panorama.setPosition(path[0]);
+
+      }
+    }
+
+    function search() {
+      var address = document.getElementById("addressInput").value;
+      geocoder.geocode({"address": address}, function(results, status) {
+        if (status == google.maps.GeocoderStatus.OK) {
+          map.setCenter(results[0].geometry.location);
+        } else {}
+      });
+    }
+
+    function to_json(path) {
+        var json = "{" +
+        "\"distance\" : " + poly.inKm() + "," +
+        "\"path\" : [";
+        for (var i = 0; i < path.length; i++) {
+            if ( i > 0 ) {
+                json = json + ",";
+            }
+            json = json + "{\"lat\":" + path[i].lat() + ",\"lng\":" + path[i].lng() + "}";
+        }
+        json = json + "]}";
+        return json;
+    }
+
+    function register() {
+
+        var course_name = $.trim($("#course_name").val());
+        if (course_name == ""){
+            $("#route_canvas").html("コース名が入力されていません。");
+            return false;
+        }
+        if (path.length == 0 ){
+            $("#route_canvas").html("コースが設定されていません。");
+            return false;
+        }
+        var course_type = $('input[name="course_type"]:checked').val();;
+        if (course_type == "2" && (path.length < 2 || !path[0].equals(path[path.length-1]))){
+            $("#route_canvas").html("スタート地点とゴール地点が不一致です。");
+            return false;
+        }
+
+        $("#json_data").val(to_json(path));
+
+    }
+
+    google.maps.event.addDomListener(document, "keydown", function() { shiftPressed = true; });
+    google.maps.event.addDomListener(document, "keyup", function() { shiftPressed = false; });
+    google.maps.event.addDomListener(    window  , 'load'  , Init);
+
+    function Init() {
+
+      var json_path = <%= $self->render(json=> $route_path, partial => 1) %>;
+
+      for (var i = 0; i < json_path.length; i++) {
+        var latlng = new google.maps.LatLng(json_path[i].lat, json_path[i].lng);
+        path.push (latlng);
+      }
+
+      var myOptions = {
+        zoom: 17,
+        center: (path.length > 0 ) ? path[0] : new google.maps.LatLng(35.68923, 139.752274),
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        mapTypeControl: false,
+        disableDoubleClickZoom: true,
+        scrollwheel: false,
+        draggableCursor: "crosshair"
+      }
+
+      map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+
+      geocoder = new google.maps.Geocoder();
+
+      poly = new MyPolyline({ map: map , strokeColor: "#CC33FF"});
+
+      poly.setPath(path);
+      document.getElementById("route_canvas").innerHTML = poly.inKm() + "km";
+
+      var icoimg = new google.maps.MarkerImage(start_icon,
+              new google.maps.Size(32, 37),
+              new google.maps.Point(0, 0),
+              new google.maps.Point(16, 37)
+      );
+      start_marker = new google.maps.Marker({position: path[0], map: map, title: "start", icon: startimg});
+
+      var panoramaOptions = {    position: (path.length > 0 ) ? path[0] : new google.maps.LatLng(35.68923, 139.752274),
+      pov: {      heading: (path.length > 1 ) ? google.maps.geometry.spherical.computeHeading(path[0],path[1]) : 34,      pitch: 10    }  };
+      panorama = new  google.maps.StreetViewPanorama(document.getElementById('pano_canvas'),panoramaOptions);
+      map.setStreetView(panorama);
+
+      google.maps.event.addListener(map, "click", function(evt) {
+        
+        if (shiftPressed || path.length == 0) {
+            map.setCenter(evt.latLng);
+            panorama.setPosition(evt.latLng);
+            path.push(evt.latLng);
+            var icoimg = new google.maps.MarkerImage(start_icon,
+              new google.maps.Size(32, 37),
+              new google.maps.Point(0, 0),
+              new google.maps.Point(16, 37)
+            );
+            start_marker = new google.maps.Marker({position: evt.latLng, map: map, title: "start", icon: startimg});
+            if (path.length == 1) {
+                poly = new MyPolyline({ map: map , strokeColor: "#CC33FF"});
+            }
+            poly.setPath(path);
+        } 
+        else {
+            service.route({ origin: path[path.length - 1], destination: evt.latLng, travelMode: google.maps.DirectionsTravelMode.WALKING }, function(result, status) {
+                if (status == google.maps.DirectionsStatus.OK) {
+                    map.setCenter(evt.latLng);
+                    panorama.setPosition(evt.latLng);
+                    path = path.concat(result.routes[0].overview_path);
+                    poly.setPath(path);
+                    document.getElementById("route_canvas").innerHTML = poly.inKm() + "km";
+
+                    var run_head = google.maps.geometry.spherical.computeHeading(path[path.length-2],path[path.length-1]);
+                    //var pov = new google.maps.StreetViewPov({heading: run_head, pitch : 10});
+                    panorama.setPov({heading: run_head, pitch : 10});
+
+                }
+            });
+        }
+      });
+
+    }
+</script>
+% end
+
+<div class="row">
+  <div class="span12">
+    <form method="post" action="/register" class="form-inline" onsubmit="return register();">
+      <label class=control-label for=textinput>コース名:</label>
+      <input id="json_data" type="hidden" name ="data"/>
+      <input id="course_name" class=input-xlarge type=text name="course_name" placeholder="placeholder" value="<%= $self->flash("course_name") %>">
+      <label class="course-type-label control-label" for=radios>コース種別:</label>
+      <label class="radio inline" for=radios-0><input id=radios-0 value="1" <% if (  ! defined $self->flash("course_type") || "1" eq $self->flash("course_type") ) { %><%= "checked" %><% } %> type=radio name=course_type> 片道 </label><label class="radio inline" for=radios-1><input id=radios-1 <% if (defined $self->flash("course_type") && "2" eq $self->flash("course_type")) { %><%= "checked" %><% } %> value=2 type=radio name=course_type> 周回 </label>
+      <!--label class=control-label for="">登録</label--> 
+      <button class="route-register-button btn btn-primary" name="" type="submit">登録</button>
+    </form>
+  </div>
+</div>
+<div class="row">
+  <div class="span12">
+    <div class="span6">
+      <div id="custom_bar">
+        <form>
+          <fieldset>
+            <input type="address" id="addressInput" length="10" placeholder="地名を入力" />
+            <input type="button" onclick="search()" value="JUMP" />
+            <input type="button" onclick="deletePolylines()" value="<<" />
+            <input type="button" onclick="deletePolyline()" value="<" />
+            <input type="button" onclick="connectToStart()" value="Connect" />
+          </fieldset>
+        </form>
+      </div>
+      <div id="map_canvas"></div>
+    </div>
+    <div class="span5">
+      <div id="pano_canvas"></div>
+      <div id="route_canvas"></div>
+    </div>
+  </div>
+</div>
+<script src="http://code.jquery.com/jquery.js"></script>
+<script src="js/bootstrap.min.js"></script>
+  

@@ -1,0 +1,169 @@
+% layout 'bootstrap';
+% title 'Course Record - ランニングコース記録共有サイト';
+% content_for head => begin
+<style type="text/css">
+    html {height: 100%;}
+    body {height: 100%; margin: 0; padding: 0; background-color: #FFF; font-size: small; font-family: Arial, "メイリオ", "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W4", "Osaka", "MS PGothic", sans-serif;}
+    #map_canvas { width: 100%;    height : 600px;}
+    #map_canvas label { width: auto;    display:inline;}
+    #map_canvas img {  max-width: none;}
+</style>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=geometry&sensor=false"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
+<link href="/css/bootstrap-custom.css" rel="stylesheet" />
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript" src="/js/mypolyline.js"></script>
+<script type="text/javascript">
+
+    var geocoder, map, path = [], poly;
+    var start_marker;
+    var start_icon = "/img/start-race.png";
+    var finish_icon = "/img/finish2.png";
+    var startfinish_icon = "/img/startfinish.png";
+
+    var startimg = new google.maps.MarkerImage(start_icon,
+              new google.maps.Size(32, 37),
+              new google.maps.Point(0, 0),
+              new google.maps.Point(16, 37)
+    );
+
+    var finishimg = new google.maps.MarkerImage(finish_icon,
+              new google.maps.Size(32, 37),
+              new google.maps.Point(0, 0),
+              new google.maps.Point(16, 37)
+    );
+
+    var startfinishimg = new google.maps.MarkerImage(startfinish_icon,
+              new google.maps.Size(32, 37),
+              new google.maps.Point(0, 0),
+              new google.maps.Point(16, 37)
+    );
+
+    function Init() {
+
+      var bounds = new google.maps.LatLngBounds();
+
+      var route_path = <%= $self->render(json => $route_path,partial => 1) %>;
+      for (var i = 0; i < route_path.length; i++) {
+        var latlng = new google.maps.LatLng(route_path[i].lat, route_path[i].lng);
+        bounds.extend(latlng);
+        path.push (latlng);
+      }
+
+      var myOptions = {
+        zoom: 17,
+        center: bounds.getCenter(),
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        mapTypeControl: false,
+        disableDoubleClickZoom: true,
+        scrollwheel: false,
+        draggableCursor: "crosshair"
+      }
+
+      map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+      map.fitBounds(bounds);
+      poly = new MyPolyline({ map: map , strokeColor: "#CC33FF"});
+      poly.setPath(path);
+
+      var icoimg = new google.maps.MarkerImage(start_icon,
+              new google.maps.Size(32, 37),
+              new google.maps.Point(0, 0),
+              new google.maps.Point(16, 37)
+      );
+
+      if (path[0].equals(path[path.length-1])){
+        startfinish_marker = new google.maps.Marker({position: path[0], map: map, title: "startfinish", icon: startfinishimg});
+      }
+      else{
+        start_marker = new google.maps.Marker({position: path[0], map: map, title: "start", icon: startimg});
+        finish_marker = new google.maps.Marker({position: path[path.length-1], map: map, title: "finish", icon: finishimg});
+      }
+
+    }
+
+    google.maps.event.addDomListener(    window  , 'load'  , Init);
+
+    function to_json(path) {
+        var json = "{" +
+        "\"path\" : [";
+        for (var i = 0; i < path.length; i++) {
+            if ( i > 0 ) {
+                json = json + ",";
+            }
+            json = json + "{\"lat\":" + path[i].lat() + ",\"lng\":" + path[i].lng() + "}";
+        }
+        json = json + "]}";
+        return json;
+    }
+
+    function register() {
+
+        $("#route_path").val(to_json(path));
+
+    }
+</script>
+% end
+
+<form class="form-horizontal" method="post" action="/register/confirm" onsubmit="return register();">
+  <legend>コース登録確認</legend>
+  <fieldset>
+
+  <!-- Text input-->
+  <div class="control-group">
+    <label class="control-label" for="name">コース名</label>
+    <div class="controls">
+      <input id="name" class="input-xlarge" name="course_name" type="text" placeholder="placeholder" readonly>
+      
+    </div>
+  </div>
+
+  <!-- Text input-->
+  <div class="control-group">
+    <label class="control-label" for="distance">距離</label>
+    <div class="controls">
+      <input id="distance" class="input-xlarge" name="distance" type="text" placeholder="placeholder" readonly>
+      
+    </div>
+  </div>
+
+  <!-- Multiple Radios (inline) -->
+  <div class="control-group">
+    <label class="control-label" for="radios">種別</label>
+    <div class="controls">
+      <label class="radio inline" for="radios-0">
+        <input id="radios-0" name="course_type" value="1" type="radio" readonly>
+        片道
+      </label>
+      <label class="radio inline" for="radios-1">
+        <input id="radios-1" name="course_type" value="2" type="radio" readonly>
+        往復
+      </label>
+    </div>
+  </div>
+
+  <!-- Button (Double) -->
+  <div class="control-group">
+    <label class="control-label" for="register_button"></label>
+    <div class="controls">
+      <button id="register_button" class="btn btn-success" name="register_button" type="submit" value="1">登録</button>
+      <button id="cancel_button" class="btn btn-danger" name="cancel_button" type="submit" value="1">キャンセル</button>
+    </div>
+  </div>
+
+  </fieldset>
+  <input type="hidden" id="route_path" name="route_path" />
+</form>
+
+<div id="map_canvas"></div>
+
+<ul class="thumbnails">
+  <% for (my $i=0;$i<$km+1;$i++) { %>
+  <li class="span3">
+    <div id="<%= $i %>km_view"></div>
+    <div class="caption">
+      <h3><% if ($i == 0) { %>start<% } %><% elsif ($i == ($km)) { %>finish<% } %><% else{ %><%= $i %>km<% } %></h3>
+    </div>
+  </li>
+  <% } %>
+</ul>
